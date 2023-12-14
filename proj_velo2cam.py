@@ -80,7 +80,7 @@ def process_one_frame(number):
     #                                 [0    0    0    1]     [  0     1 ]
     cam = P2.dot(R0_rect.dot(Tr_velo_to_cam.dot(velo)))
 
-    # 删除像方坐标z为负值的店
+    # 删除像方坐标z为负值的点
     reflectance = np.delete(reflectance, np.where(cam[2,:]<0))
     cam = np.delete(cam,np.where(cam[2,:]<0),axis=1)
 
