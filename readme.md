@@ -18,7 +18,7 @@ numpy == 1.23.5
 Download KITTI dataset and place `proj_velo2cam.py` in the root path.
 CLI is also supported, e.g. run with frame 000999
 ```
-python3 proj_velo2cam.py 999
+python3 proj_velo2cam.py
 ```
 ## Quick demo
 Just clone the whole repo and run `proj_velo2cam.py`.
