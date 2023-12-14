@@ -121,6 +121,7 @@ def process_one_frame(number):
     axes[1].scatter([u],[v],c=[z],cmap='rainbow_r',alpha=0.5,s=1)
     axes[2].scatter([u],[v],c=[reflectance],cmap='rainbow_r',alpha=0.5,s=1)
 
+    os.makedirs('./data_object_image_2/testing/projection', exist_ok=True)
     plt.savefig(f'./data_object_image_2/testing/projection/{number}.png',bbox_inches='tight')
 
     # plt.show()
