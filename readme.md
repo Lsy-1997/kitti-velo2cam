@@ -1,6 +1,6 @@
 # Lidar to camera projection of KITTI
 ## Compare to Original Code
-add comprehensable annotation and add reflectance projection
+Add comprehensable annotation and add reflectance projection.
 ## Intro
 [中文博客](https://www.cnblogs.com/azureology/p/14004131.html)
 
