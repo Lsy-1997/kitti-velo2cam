@@ -42,7 +42,5 @@ By default, run with frame 000007 with path below:
     └── calib
         └── 000007.txt
 ```
-## Original image
-![](./data_object_image_2/testing/image_2/000001.png)
-## Projection
+## Projection Result
 ![](./data_object_image_2/testing/projection/000001.png)
