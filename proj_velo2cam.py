@@ -2,80 +2,152 @@ import sys
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
+import os
+import glob
 
-sn = int(sys.argv[1]) if len(sys.argv)>1 else 7 #default 0-7517
-name = '%06d'%sn # 6 digit zeropadding
-img = f'./data_object_image_2/testing/image_2/{name}.png'
-binary = f'./data_object_velodyne/testing/velodyne/{name}.bin'
-with open(f'./testing/calib/{name}.txt','r') as f:
-    calib = f.readlines()
+def process_one_frame(number):
+    img = f'./data_object_image_2/testing/image_2/{number}.png'
+    binary = f'./data_object_velodyne/testing/velodyne/{number}.bin'
+    with open(f'./testing/calib/{number}.txt','r') as f:
+        calib = f.readlines()
+    # 相机内参 camera2 
+    # | fx 0 u0 |
+    # | 0 fy v0 |
+    # | 0  0  1 |
+    # example: 000007.txt
+    # 7.215377000000e+02 0.000000000000e+00 6.095593000000e+02 4.485728000000e+01 
+    # 0.000000000000e+00 7.215377000000e+02 1.728540000000e+02 2.163791000000e-01 
+    # 0.000000000000e+00 0.000000000000e+00 1.000000000000e+00 2.745884000000e-03
+    P2 = np.array([float(x) for x in calib[2].strip('\n').split(' ')[1:]]).reshape(3,4)
 
-# camera2 相机内参 P2 (3 x 4) for left eye
-# | fx 0 u0 |
-# | 0 fy v0 |
-# | 0  0  1 |
-# example: 000007.txt
-# 7.215377000000e+02 0.000000000000e+00 6.095593000000e+02 4.485728000000e+01 
-# 0.000000000000e+00 7.215377000000e+02 1.728540000000e+02 2.163791000000e-01 
-# 0.000000000000e+00 0.000000000000e+00 1.000000000000e+00 2.745884000000e-03
-P2 = np.array([float(x) for x in calib[2].strip('\n').split(' ')[1:]]).reshape(3,4)
+    # 相机旋转矩阵
+    # | r11  r12  r13 |
+    # | r21  r22  r23 |
+    # | r31  r32  r33 |
+    # example: 000007.txt
+    # 9.999239000000e-01 9.837760000000e-03 -7.445048000000e-03 
+    # -9.869795000000e-03 9.999421000000e-01 -4.278459000000e-03 
+    # 7.402527000000e-03 4.351614000000e-03 9.999631000000e-01
+    R0_rect = np.array([float(x) for x in calib[4].strip('\n').split(' ')[1:]]).reshape(3,3)
 
-# 相机旋转矩阵
-# | fx 0 u0 |
-# | 0 fy v0 |
-# | 0  0  1 |
-# example: 000007.txt
-# 9.999239000000e-01 9.837760000000e-03 -7.445048000000e-03 
-# -9.869795000000e-03 9.999421000000e-01 -4.278459000000e-03 
-# 7.402527000000e-03 4.351614000000e-03 9.999631000000e-01
-R0_rect = np.array([float(x) for x in calib[4].strip('\n').split(' ')[1:]]).reshape(3,3)
+    # 矩阵转为如下形式, 增加维度方便计算
 
-# Add a 1 in bottom-right, reshape to 4 x 4
-R0_rect = np.insert(R0_rect,3,values=[0,0,0],axis=0)
-R0_rect = np.insert(R0_rect,3,values=[0,0,0,1],axis=1)
+    #  9.999239000000e-01  9.837760000000e-03 -7.445048000000e-03 0
+    # -9.869795000000e-03  9.999421000000e-01 -4.278459000000e-03 0
+    #  7.402527000000e-03  4.351614000000e-03  9.999631000000e-01 0
+    #                   0                   0                   0 1
+    R0_rect = np.insert(R0_rect,3,values=[0,0,0],axis=0)
+    R0_rect = np.insert(R0_rect,3,values=[0,0,0,1],axis=1)
 
-# 激光雷达到相机坐标变换矩阵
-# | R  T |
-# | 0  1 |
-# example: 000007.txt
-# 7.533745000000e-03 -9.999714000000e-01 -6.166020000000e-04 -4.069766000000e-03 
-# 1.480249000000e-02 7.280733000000e-04 -9.998902000000e-01 -7.631618000000e-02 
-# 9.998621000000e-01 7.523790000000e-03 1.480755000000e-02 -2.717806000000e-01
-Tr_velo_to_cam = np.array([float(x) for x in calib[5].strip('\n').split(' ')[1:]]).reshape(3,4)
-Tr_velo_to_cam = np.insert(Tr_velo_to_cam,3,values=[0,0,0,1],axis=0)
+    # 激光雷达到相机坐标变换矩阵
+    # | R  T |
+    # | 0  1 |
+    # example: 000007.txt
+    # 7.533745000000e-03 -9.999714000000e-01 -6.166020000000e-04 -4.069766000000e-03 
+    # 1.480249000000e-02 7.280733000000e-04 -9.998902000000e-01 -7.631618000000e-02 
+    # 9.998621000000e-01 7.523790000000e-03 1.480755000000e-02 -2.717806000000e-01
+    Tr_velo_to_cam = np.array([float(x) for x in calib[5].strip('\n').split(' ')[1:]]).reshape(3,4)
 
-# point cloud
-scan = np.fromfile(binary, dtype=np.float32).reshape((-1,4))
-points = scan[:, 0:3] # lidar xyz (front, left, up)
+    # 7.533745000000e-03 -9.999714000000e-01 -6.166020000000e-04 -4.069766000000e-03 
+    # 1.480249000000e-02  7.280733000000e-04 -9.998902000000e-01 -7.631618000000e-02 
+    # 9.998621000000e-01  7.523790000000e-03  1.480755000000e-02 -2.717806000000e-01
+    #                  0                   0                   0                   1
+    Tr_velo_to_cam = np.insert(Tr_velo_to_cam,3,values=[0,0,0,1],axis=0)
 
-# TODO: use fov filter? 
-velo = np.insert(points,3,1,axis=1).T
-velo = np.delete(velo,np.where(velo[0,:]<0),axis=1)
-cam = P2.dot(R0_rect.dot(Tr_velo_to_cam.dot(velo)))
-cam = np.delete(cam,np.where(cam[2,:]<0),axis=1)
+    # read point cloud file
+    scan = np.fromfile(binary, dtype=np.float32).reshape((-1,4))
 
-# get u,v,z
-cam[:2] /= cam[2,:]
+    # lidar xyz (front, left, up)
+    points = scan[:, 0:3]
 
-# do projection staff
-plt.figure(figsize=(12,5),dpi=96,tight_layout=True)
-png = mpimg.imread(img)
-IMG_H,IMG_W,_ = png.shape
+    # reflectance
+    reflectance = scan[:, 3].T
 
-# restrict canvas in range
-plt.axis([0,IMG_W,IMG_H,0])
-plt.imshow(png)
+    # TODO: use fov filter? 
+    velo = np.insert(points,3,1,axis=1).T
 
-# filter point out of canvas
-u,v,z = cam
-u_out = np.logical_or(u<0, u>IMG_W)
-v_out = np.logical_or(v<0, v>IMG_H)
-outlier = np.logical_or(u_out, v_out)
-cam = np.delete(cam,np.where(outlier),axis=1)
+    # 删除距离为负的点云
+    reflectance = np.delete(reflectance, np.where(velo[0,:]<0))
+    velo = np.delete(velo,np.where(velo[0,:]<0),axis=1)
 
-# generate color map from depth
-u,v,z = cam
-plt.scatter([u],[v],c=[z],cmap='rainbow_r',alpha=0.5,s=2)
-plt.title(name)
-plt.savefig(f'./data_object_image_2/testing/projection/{name}.png',bbox_inches='tight')
-plt.show()
+    # 点云 [x y z] 转 [u v]
+    #
+    #           [fx   0   u0   ?]     [r11  r12  r13  0]     [          ]
+    #  cam =    [0    fy  v0   ?]  *  [r21  r22  r23  0]  *  [  R     t ]  *  velo(4, n)
+    #           [0    0    1   ?]     [r31  r32  r33  0]     [          ]
+    #                                 [0    0    0    1]     [  0     1 ]
+    cam = P2.dot(R0_rect.dot(Tr_velo_to_cam.dot(velo)))
+
+    # 删除像方坐标z为负值的店
+    reflectance = np.delete(reflectance, np.where(cam[2,:]<0))
+    cam = np.delete(cam,np.where(cam[2,:]<0),axis=1)
+
+    # get u,v,z
+    cam[:2] /= cam[2,:]
+
+    # plt init
+    # plt.figure(1)
+    fig, axes = plt.subplots(3, 1, figsize=(12,5))
+    png = mpimg.imread(img)
+    IMG_H,IMG_W,_ = png.shape
+    # plt.axis([0,IMG_W,IMG_H,0])
+    # plt.imshow(png)
+
+
+    # plt.figure(2)
+    # png = mpimg.imread(img)
+    # IMG_H,IMG_W,_ = png.shape
+    # plt.axis([0,IMG_W,IMG_H,0])
+    # plt.imshow(png)
+    # plt.tight_layout()
+
+    axes[0].imshow(png)
+    axes[0].set_title('Image')
+
+    axes[1].imshow(png)
+    axes[1].set_title('Depth Mix')
+
+    axes[2].imshow(png)
+    axes[2].set_title('Reflectance Mix')
+
+    plt.tight_layout()
+    axes[0].axis('off')
+    axes[1].axis('off')
+    axes[2].axis('off')
+
+    # plt.figure(figsize=(12,5),dpi=96,tight_layout=True)
+
+    # filter point out of canvas
+    u,v,z = cam
+    u_out = np.logical_or(u<0, u>IMG_W)
+    v_out = np.logical_or(v<0, v>IMG_H)
+    outlier = np.logical_or(u_out, v_out)
+
+    reflectance = np.delete(reflectance,np.where(outlier))
+    cam = np.delete(cam,np.where(outlier),axis=1)
+
+    # generate color map from depth
+    u,v,z = cam
+    axes[1].scatter([u],[v],c=[z],cmap='rainbow_r',alpha=0.5,s=1)
+    axes[2].scatter([u],[v],c=[reflectance],cmap='rainbow_r',alpha=0.5,s=1)
+    # plt.figure(1)
+    # plt.scatter([u],[v],c=[z],cmap='rainbow_r',alpha=0.5,s=2)
+    # plt.figure(2)
+    # plt.scatter([u],[v],c=[reflectance],cmap='rainbow_r',alpha=0.5,s=2)
+
+    # plt.title(name)
+    plt.savefig(f'./data_object_image_2/testing/projection/{number}.png',bbox_inches='tight')
+
+    plt.show()
+
+def main():
+    img_dir = "data_object_image_2/testing/image_2"
+    img_nums = []
+    for file_path in glob.glob(os.path.join(img_dir, '*.png')):  # 替换 '*.png' 为你想要匹配的图片格式，比如 '*.jpg'
+        img_nums.append(os.path.splitext(os.path.basename(file_path))[0])
+    
+    for num in img_nums:
+        process_one_frame(num)
+
+if __name__ == '__main__':
+    main()
