@@ -43,6 +43,6 @@ By default, run with frame 000007 with path below:
         └── 000007.txt
 ```
 ## Original image
-![](./data_object_image_2/testing/image_2/000000.png)
+![](./data_object_image_2/testing/image_2/000001.png)
 ## Projection
-![](./data_object_image_2/testing/projection/000000.png)
+![](./data_object_image_2/testing/projection/000001.png)
