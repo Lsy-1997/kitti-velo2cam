@@ -6,8 +6,6 @@ import os
 import glob
 
 def process_one_frame(number):
-    img = f'./data_object_image_2/testing/image_2/{number}.png'
-    binary = f'./data_object_velodyne/testing/velodyne/{number}.bin'
     with open(f'./testing/calib/{number}.txt','r') as f:
         calib = f.readlines()
     # 相机内参 camera2 
@@ -25,17 +23,20 @@ def process_one_frame(number):
     # | r21  r22  r23 |
     # | r31  r32  r33 |
     # example: 000007.txt
+    # ——————————————————————————————————————————————————————————————————
     # 9.999239000000e-01 9.837760000000e-03 -7.445048000000e-03 
     # -9.869795000000e-03 9.999421000000e-01 -4.278459000000e-03 
     # 7.402527000000e-03 4.351614000000e-03 9.999631000000e-01
+    # ——————————————————————————————————————————————————————————————————
     R0_rect = np.array([float(x) for x in calib[4].strip('\n').split(' ')[1:]]).reshape(3,3)
 
     # 矩阵转为如下形式, 增加维度方便计算
-
+    # ——————————————————————————————————————————————————————————————————
     #  9.999239000000e-01  9.837760000000e-03 -7.445048000000e-03 0
     # -9.869795000000e-03  9.999421000000e-01 -4.278459000000e-03 0
     #  7.402527000000e-03  4.351614000000e-03  9.999631000000e-01 0
     #                   0                   0                   0 1
+    # ——————————————————————————————————————————————————————————————————
     R0_rect = np.insert(R0_rect,3,values=[0,0,0],axis=0)
     R0_rect = np.insert(R0_rect,3,values=[0,0,0,1],axis=1)
 
@@ -55,7 +56,8 @@ def process_one_frame(number):
     Tr_velo_to_cam = np.insert(Tr_velo_to_cam,3,values=[0,0,0,1],axis=0)
 
     # read point cloud file
-    scan = np.fromfile(binary, dtype=np.float32).reshape((-1,4))
+    point_cloud_file = f'./data_object_velodyne/testing/velodyne/{number}.bin'
+    scan = np.fromfile(point_cloud_file, dtype=np.float32).reshape((-1,4))
 
     # lidar xyz (front, left, up)
     points = scan[:, 0:3]
@@ -63,7 +65,7 @@ def process_one_frame(number):
     # reflectance
     reflectance = scan[:, 3].T
 
-    # TODO: use fov filter? 
+    # 补充一个维度，便于矩阵计算
     velo = np.insert(points,3,1,axis=1).T
 
     # 删除距离为负的点云
@@ -86,28 +88,18 @@ def process_one_frame(number):
     cam[:2] /= cam[2,:]
 
     # plt init
-    # plt.figure(1)
-    fig, axes = plt.subplots(3, 1, figsize=(12,5))
-    png = mpimg.imread(img)
-    IMG_H,IMG_W,_ = png.shape
-    # plt.axis([0,IMG_W,IMG_H,0])
-    # plt.imshow(png)
+    img_file = f'./data_object_image_2/testing/image_2/{number}.png'
+    fig, axes = plt.subplots(3, 1)
+    img = mpimg.imread(img_file)
+    IMG_H,IMG_W,_ = img.shape
 
-
-    # plt.figure(2)
-    # png = mpimg.imread(img)
-    # IMG_H,IMG_W,_ = png.shape
-    # plt.axis([0,IMG_W,IMG_H,0])
-    # plt.imshow(png)
-    # plt.tight_layout()
-
-    axes[0].imshow(png)
+    axes[0].imshow(img)
     axes[0].set_title('Image')
 
-    axes[1].imshow(png)
+    axes[1].imshow(img)
     axes[1].set_title('Depth Mix')
 
-    axes[2].imshow(png)
+    axes[2].imshow(img)
     axes[2].set_title('Reflectance Mix')
 
     plt.tight_layout()
@@ -115,9 +107,7 @@ def process_one_frame(number):
     axes[1].axis('off')
     axes[2].axis('off')
 
-    # plt.figure(figsize=(12,5),dpi=96,tight_layout=True)
-
-    # filter point out of canvas
+    # filter point out of canvas 删除相机取景框以外的点云
     u,v,z = cam
     u_out = np.logical_or(u<0, u>IMG_W)
     v_out = np.logical_or(v<0, v>IMG_H)
@@ -126,19 +116,14 @@ def process_one_frame(number):
     reflectance = np.delete(reflectance,np.where(outlier))
     cam = np.delete(cam,np.where(outlier),axis=1)
 
-    # generate color map from depth
+    # 根据 u, v 将点云画到图像上 (s可调整点云像素大小)
     u,v,z = cam
     axes[1].scatter([u],[v],c=[z],cmap='rainbow_r',alpha=0.5,s=1)
     axes[2].scatter([u],[v],c=[reflectance],cmap='rainbow_r',alpha=0.5,s=1)
-    # plt.figure(1)
-    # plt.scatter([u],[v],c=[z],cmap='rainbow_r',alpha=0.5,s=2)
-    # plt.figure(2)
-    # plt.scatter([u],[v],c=[reflectance],cmap='rainbow_r',alpha=0.5,s=2)
 
-    # plt.title(name)
     plt.savefig(f'./data_object_image_2/testing/projection/{number}.png',bbox_inches='tight')
 
-    plt.show()
+    # plt.show()
 
 def main():
     img_dir = "data_object_image_2/testing/image_2"
