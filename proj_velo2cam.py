@@ -4,6 +4,7 @@ import matplotlib.image as mpimg
 import numpy as np
 import os
 import glob
+from tqdm import tqdm
 
 def process_one_frame(number):
     with open(f'./testing/calib/{number}.txt','r') as f:
@@ -90,17 +91,18 @@ def process_one_frame(number):
     # plt init
     img_file = f'./data_object_image_2/testing/image_2/{number}.png'
     fig, axes = plt.subplots(3, 1)
+    plt.subplots_adjust(wspace=0.1, hspace=0.1)
     img = mpimg.imread(img_file)
     IMG_H,IMG_W,_ = img.shape
 
     axes[0].imshow(img)
-    axes[0].set_title('Image')
+    axes[0].set_title('Image', fontsize=6)
 
     axes[1].imshow(img)
-    axes[1].set_title('Depth Mix')
+    axes[1].set_title('Depth Mix', fontsize=6)
 
     axes[2].imshow(img)
-    axes[2].set_title('Reflectance Mix')
+    axes[2].set_title('Reflectance Mix', fontsize=6)
 
     plt.tight_layout()
     axes[0].axis('off')
@@ -122,7 +124,7 @@ def process_one_frame(number):
     axes[2].scatter([u],[v],c=[reflectance],cmap='rainbow_r',alpha=0.5,s=1)
 
     os.makedirs('./data_object_image_2/testing/projection', exist_ok=True)
-    plt.savefig(f'./data_object_image_2/testing/projection/{number}.png',bbox_inches='tight')
+    plt.savefig(f'./data_object_image_2/testing/projection/{number}.png',dpi=300,bbox_inches='tight')
 
     # plt.show()
 
@@ -132,7 +134,7 @@ def main():
     for file_path in glob.glob(os.path.join(img_dir, '*.png')):  # 替换 '*.png' 为你想要匹配的图片格式，比如 '*.jpg'
         img_nums.append(os.path.splitext(os.path.basename(file_path))[0])
     
-    for num in img_nums:
+    for num in tqdm(img_nums):
         process_one_frame(num)
 
 if __name__ == '__main__':
