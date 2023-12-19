@@ -1,4 +1,5 @@
-# Lidar to camera projection of KITTI
+# Lidar to camera projection
+Support KITTI and ROS data
 ## Compare to Original Code
 Add comprehensable annotation and add reflectance projection.
 ## Intro
@@ -17,11 +18,27 @@ matplotlib == 3.4.3
 numpy == 1.23.5
 ```
 ## Usage
+### KITTI dataset
 Download KITTI dataset and place `proj_velo2cam.py` in the root path.
 ```
 python3 proj_velo2cam.py
 ```
+### ROS record data
+You are assumed knowing how to use ROS(robot operating system), and you have record a rosbag of image and point cloud, and you also got a calibration parameter files.
+
+Use extract_img_pc_from_rosbag.py to extract image in rosbag:
+```
+python extract_img_pc_from_rosbag.py
+```
+
+Use pcl_ros package to extract point cloud, and use rosbag play to play the bag:
+```
+rosbag play <your_ros.bag>
+rosrun pcl_ros pointcloud_to_pcd input:=/points_raw
+```
+
 ## Quick demo
+### KITTI dataset
 Just clone the whole repo and run `proj_velo2cam.py`.
 By default, run with frame 000007 with path below:
 ```
@@ -42,5 +59,8 @@ By default, run with frame 000007 with path below:
     └── calib
         └── 000007.txt
 ```
-## Projection Result
+#### Projection Result
 ![](./data_object_image_2/testing/projection/000001.png)
+
+### rosbag data
+todo:
