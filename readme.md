@@ -62,5 +62,5 @@ By default, run with frame 000007 with path below:
 #### Projection Result
 ![](./data_object_image_2/testing/projection/000001.png)
 
-### rosbag data
+### ROS data
 todo:
