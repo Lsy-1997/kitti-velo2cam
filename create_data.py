@@ -3,6 +3,10 @@ import os
 import glob
 import shutil
 
+# create_data.py
+# 功能:
+# 1.重命名图像
+# 2.将点云文件和图像文件根据时间戳一一对应, 拷贝到当前文件夹下的correspond_data文件夹下
 def main():
     images_dir = 'self_data/avpslam/image'
     pointclouds_dir = 'self_data/avpslam/point_cloud'
