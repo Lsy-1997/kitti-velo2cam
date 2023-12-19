@@ -44,7 +44,7 @@ def get_calib_param(cam_lidar_calib_file):
     return intrinsic, extrinsic
 
 def get_pointcloud_on_image(intrinsic, extrinsic, pointcloud):
-    # Autoware标定矩阵变换，跟普通变换矩阵不同
+    # Autoware标定矩阵变换，跟普通变换矩阵不同, 若为普通变换矩阵，请注释下面这段代码
     extrinsic[:3,:3] = extrinsic[:3,:3].T
     x = extrinsic[0, 3]
     y = extrinsic[1, 3]
