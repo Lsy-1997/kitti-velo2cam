@@ -5,7 +5,7 @@ Add comprehensable annotation and add reflectance projection.
 ## Intro
 [中文博客](https://www.cnblogs.com/azureology/p/14004131.html)
 
-This is a Python implementation of how to project point cloud from Velodyne coordinates into the left color image with KITTI data set.
+This is a Python implementation of how to project point cloud from Velodyne coordinates into the left color image with KITTI data set, or use data collected and calibrated by yourself.
 ## Dependices
 ```
 matplotlib == 3.1.3
@@ -62,5 +62,5 @@ By default, run with frame 000007 with path below:
 #### Projection Result
 ![](./data_object_image_2/testing/projection/000001.png)
 
-### rosbag data
+### ROS data
 todo:
