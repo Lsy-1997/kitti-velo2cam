@@ -55,13 +55,24 @@ class ExtrinsicAdjuster:
         self.image_label.pack()
 
         # Create a save button
-        self.save_button = ttk.Button(window, text="Save Image", command=self.save_extrinsic)
+        self.save_button = ttk.Button(window, text="Save Extrinsic", command=self.save_extrinsic)
+        self.save_button.pack()
+        self.save_button = ttk.Button(window, text="Refresh Parameter", command=self.refresh_extrinsic)
         self.save_button.pack()
 
         # Initialize the image on the label
         self.intrisic, self.extrinsic= proj_pcd2cam.get_calib_param(calib_path)
         self.new_extrinsic = self.extrinsic.copy()
         self.pointcloud = proj_pcd2cam.load_pcd_data(pt_path)
+        self.update_extrinsic()
+
+    def refresh_extrinsic(self):
+        self.alpha_scale.set(0)
+        self.beta_scale.set(0)
+        self.gamma_scale.set(0)
+        self.x_scale.set(0)
+        self.y_scale.set(0)
+        self.z_scale.set(0)
         self.update_extrinsic()
     
     def save_extrinsic(self):
@@ -139,7 +150,7 @@ def main():
     pointcloud_path = 'correspond_data/pointcloud/1702895061247132.pcd'
     calib_data_path = 'self_data/avpslam/calibration/20231218_192345_autoware_lidar_camera_calibration.yaml'
     root = tk.Tk()
-    app = ExtrinsicAdjuster(root, image_path, pointcloud_path, calib_data_path)  # Replace with your image path
+    app = ExtrinsicAdjuster(root, image_path, pointcloud_path, calib_data_path)
     root.mainloop()
 
 if __name__ == '__main__':

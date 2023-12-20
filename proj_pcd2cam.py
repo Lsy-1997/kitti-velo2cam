@@ -102,13 +102,13 @@ def plt_init(img_file):
 def process_one_frame(number):
     # 读取标定得到的内外参
     cam_lidar_calib_file='self_data/avpslam/calibration/20231218_192345_autoware_lidar_camera_calibration.yaml'
-    P2, Tr_lidar_to_cam = get_calib_param(cam_lidar_calib_file)
+    intrinsic, extrinsic = get_calib_param(cam_lidar_calib_file)
 
     # 读取激光点云数据
     point_cloud_file2 = 'correspond_data/pointcloud/1702895061247132.pcd'
     scan = load_pcd_data(point_cloud_file2)
 
-    cam, reflectance = get_pointcloud_on_image(P2, Tr_lidar_to_cam, scan)
+    cam, reflectance = get_pointcloud_on_image(intrinsic, extrinsic, scan)
 
     # plt init
     img_file = 'correspond_data/image/1702895061262535.jpg'
