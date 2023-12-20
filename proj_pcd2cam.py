@@ -27,7 +27,7 @@ def load_pcd_data(file_path):
     print(f"origin points: {pts_num}")
     print(f"valid points: {len(pts)}")
     print(f"invalid points: {pts_num - len(pts)}")
-    res = np.zeros((len(pts), len(pts[0])), dtype=np.float)
+    res = np.zeros((len(pts), len(pts[0])), dtype=np.float32)
     for i in range(len(pts)):
         res[i] = pts[i]
     return res
