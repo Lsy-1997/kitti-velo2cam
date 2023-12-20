@@ -78,7 +78,6 @@ def get_pointcloud_on_image(intrinsic, extrinsic, pointcloud):
     return cam, reflectance
 
 def plt_init(img_file):
-    img_file = 'correspond_data/image/1702895061262535.jpg'
     fig, axes = plt.subplots(1, 3)
     plt.subplots_adjust(wspace=0.1, hspace=0.1)
     img = mpimg.imread(img_file)
@@ -101,17 +100,18 @@ def plt_init(img_file):
 
 def process_one_frame(number):
     # 读取标定得到的内外参
-    cam_lidar_calib_file='self_data/avpslam/calibration/20231218_192345_autoware_lidar_camera_calibration.yaml'
+    cam_lidar_calib_file='ros_data/20231218_132035_autoware_lidar_camera_calibration.yaml'
     intrinsic, extrinsic = get_calib_param(cam_lidar_calib_file)
 
     # 读取激光点云数据
-    point_cloud_file2 = 'correspond_data/pointcloud/1702895061247132.pcd'
+    point_cloud_file2 = 'ros_data/pointcloud/1702895061247132.pcd'
     scan = load_pcd_data(point_cloud_file2)
 
     cam, reflectance = get_pointcloud_on_image(intrinsic, extrinsic, scan)
 
     # plt init
-    img_file = 'correspond_data/image/1702895061262535.jpg'
+    img_file = 'ros_data/image/1702895061262535.jpg'
+    img_name = os.path.splitext(os.path.basename(img_file))[0]
     IMG_H, IMG_W, axes = plt_init(img_file)
 
     # filter point out of canvas 删除相机取景框以外的点云
@@ -128,8 +128,10 @@ def process_one_frame(number):
     axes[1].scatter([u],[v],c=[z],cmap='rainbow_r',alpha=0.5,s=5)
     axes[2].scatter([u],[v],c=[reflectance],cmap='rainbow_r',alpha=0.5,s=5)
 
-    os.makedirs('./data_object_image_2/testing/projection', exist_ok=True)
-    plt.savefig(f'./data_object_image_2/testing/projection/{number}.png',dpi=300,bbox_inches='tight')
+    projection_save_dir = 'ros_data/projection/'
+    os.makedirs(projection_save_dir, exist_ok=True)
+    # plt.savefig(f'./data_object_image_2/testing/projection/{number}.png',dpi=300,bbox_inches='tight')
+    plt.savefig(os.path.join(projection_save_dir, img_name),dpi=300,bbox_inches='tight')
 
     # plt.show()
 

@@ -146,9 +146,9 @@ def draw_circle(image, u, v, z):
 
 # Main function to create the GUI
 def main():
-    image_path = 'correspond_data/image/1702895061262535.jpg'
-    pointcloud_path = 'correspond_data/pointcloud/1702895061247132.pcd'
-    calib_data_path = 'self_data/avpslam/calibration/20231218_192345_autoware_lidar_camera_calibration.yaml'
+    image_path = 'ros_data/image/1702895061262535.jpg'
+    pointcloud_path = 'ros_data/pointcloud/1702895061247132.pcd'
+    calib_data_path = 'ros_data/20231218_132035_autoware_lidar_camera_calibration.yaml'
     root = tk.Tk()
     app = ExtrinsicAdjuster(root, image_path, pointcloud_path, calib_data_path)
     root.mainloop()
